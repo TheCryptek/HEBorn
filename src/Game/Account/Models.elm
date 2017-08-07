@@ -1,23 +1,34 @@
 module Game.Account.Models
     exposing
         ( Model
-        , AccountID
+        , ID
         , Token
+        , Username
+        , Email
         , initialModel
         , getToken
         )
 
-import Game.Shared exposing (..)
 import Game.Servers.Shared as Servers
 import Game.Account.Database.Models as Database exposing (..)
 import Game.Account.Dock.Models as Dock
+import Game.Account.Bounces.Models as Bounces
+import Game.Account.Inventory.Models as Inventory
 
 
-type alias AccountID =
-    ID
+type alias ID =
+    String
+
+
+type alias Username =
+    String
 
 
 type alias Token =
+    String
+
+
+type alias Email =
     String
 
 
@@ -26,14 +37,16 @@ type alias AuthData =
 
 
 type alias Model =
-    { id : Maybe AccountID
-    , username : Maybe String
-    , email : Maybe String
+    { id : ID
+    , username : String
     , auth : AuthData
+    , email : Maybe Email
     , database : Database
     , dock : Dock.Model
     , logout : Bool
     , servers : List Servers.ID
+    , bounces : Bounces.Model
+    , inventory : Inventory.Model
     }
 
 
@@ -42,16 +55,18 @@ initialAuth token =
     { token = token }
 
 
-initialModel : Token -> Model
-initialModel token =
-    { id = Nothing
-    , username = Nothing
-    , email = Nothing
+initialModel : ID -> Username -> Token -> Model
+initialModel id username token =
+    { id = id
+    , username = username
     , auth = initialAuth token
+    , email = Nothing
     , database = Database.initialModel
     , dock = Dock.initialModel
     , logout = False
     , servers = []
+    , bounces = Bounces.initialModel
+    , inventory = Inventory.initialModel
     }
 
 

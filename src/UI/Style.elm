@@ -1,8 +1,8 @@
-module UI.Style exposing (css)
+module UI.Style exposing (css, clickableBox)
 
 import Css exposing (..)
 import Css.Namespace exposing (namespace)
-import Css.Elements exposing (typeSelector, input, span)
+import Css.Elements exposing (typeSelector, input, span, button)
 import Css.Common exposing (internalPadding, flexContainerHorz, flexContainerVert)
 import Css.Utils as Css exposing (withAttribute)
 import Css.Icons as Icon exposing (locationTarget)
@@ -182,17 +182,22 @@ verticalSticked =
 
 widgets : List Snippet
 widgets =
-    [ progressBar, horizontalBtnPanel, horizontalTabs ] ++ customSelect
+    [ progressBar
+    , horizontalBtnPanel
+    , horizontalTabs
+    , customSelect
+    , modal
+    , map
+    ]
 
 
-customSelect : List Snippet
+customSelect : Snippet
 customSelect =
-    [ typeSelector "customSelect"
+    typeSelector "customSelect"
         [ children [ typeSelector "selector" [ display none ] ]
         , withAttribute (Css.EQ "data-open" "open")
             [ children [ typeSelector "selector" [ display block ] ] ]
         ]
-    ]
 
 
 horizontalBtnPanel : Snippet
@@ -208,7 +213,6 @@ horizontalTabs : Snippet
 horizontalTabs =
     typeSelector "panel"
         [ fontSize (px 12)
-        , borderBottom3 (px 1) solid Colors.black
         , flexContainerHorz
         , children
             [ typeSelector "tab"
@@ -216,9 +220,7 @@ horizontalTabs =
                 , flex (int 1)
                 , textAlign center
                 , padding3 (px 8) (px 16) (px 4)
-                , borderTop3 (px 1) solid Colors.black
-                , borderLeft3 (px 1) solid Colors.black
-                , borderRight3 (px 1) solid Colors.black
+                , borderTop3 (px 1) solid Colors.separator
                 , borderTopLeftRadius (px 12)
                 , borderTopRightRadius (px 12)
                 , withAttribute (Css.EQ "data-selected" "\"1\"")
@@ -259,19 +261,89 @@ progressBar =
         ]
 
 
+modal : Snippet
+modal =
+    typeSelector "modal"
+        [ position absolute
+        , left (px 0)
+        , right (px 0)
+        , top (px 0)
+        , height (pct 100)
+        , zIndex (int 0)
+        , flexContainerVert
+        , justifyContent center
+        , children
+            [ typeSelector "overlay"
+                [ backgroundColor (rgba 0 0 0 0.5)
+                , position absolute
+                , left (px 0)
+                , right (px 0)
+                , top (px 0)
+                , bottom (px 0)
+                , width (pct 100)
+                , height (pct 100)
+                , zIndex (int -1)
+                ]
+            , typeSelector "content"
+                [ backgroundColor Colors.bgModal
+                , color Colors.white
+                , internalPadding
+                , children
+                    [ typeSelector "btns"
+                        [ textAlign right
+                        , display block
+                        , children
+                            [ button
+                                [ marginLeft (px 8)
+                                , border3 (px 2) solid Colors.white
+                                , color Colors.white
+                                , backgroundColor Colors.bgModal
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        ]
+
+
+map : Snippet
+map =
+    typeSelector "hemap"
+        [ height (pct 100)
+        , display block
+        , zIndex (int 0)
+        ]
+
+
 
 -- Utils
 
 
 utils : List Snippet
 utils =
-    [ spacer ]
+    [ spacer
+    , button [ clickableBox ]
+    ]
 
 
 spacer : Snippet
 spacer =
     typeSelector "elastic"
         [ flex (int 1) ]
+
+
+clickableBox : Style
+clickableBox =
+    batch
+        [ backgroundImage <| linearGradient2 toBottom (stop Colors.white) (stop <| hex "e5e5e5") []
+        , border3 (px 1) solid (hex "bbb")
+        , borderRadius (px 4)
+        , boxShadow5 (px 0) (px 1) (px 0) (px 1) (rgba 0 0 0 0.04)
+        , color Colors.black
+        , textAlign center
+        , cursor pointer
+        ]
 
 
 

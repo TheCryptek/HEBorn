@@ -4,6 +4,7 @@ import Css exposing (..)
 import Css.Namespace exposing (namespace)
 import Css.Elements exposing (input, form)
 import Css.Common exposing (flexContainerHorz, flexContainerVert, internalPadding, internalPaddingSz)
+import UI.Colors as Colors
 import Apps.Browser.Resources exposing (Classes(..), prefix)
 
 
@@ -23,7 +24,7 @@ css =
             , backgroundColor (hex "DDD")
             , borderBottom3 (px 1) solid (hex "CCC")
             , internalPadding
-            , margin3 (px -8) (px -8) (px 8)
+            , margin3 (px -1) (px 0) (px 0)
             ]
         , class AddressBar
             [ flex (int 1)
@@ -42,7 +43,6 @@ css =
         , class Client
             [ flexContainerVert
             , height (pct 100)
-            , internalPadding
             , children
                 [ everything
                     [ flex (int 0) ]
@@ -54,8 +54,9 @@ css =
                 ]
             ]
         , class PageContent
-            [ margin (px -8)
-            , flexContainerVert
+            [ flexContainerVert
+            , overflowY auto
+            , Css.backgroundColor Colors.white
             ]
         , class LoginPageHeader
             [ lineHeight (int 3)

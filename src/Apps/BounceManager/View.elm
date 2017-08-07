@@ -3,14 +3,15 @@ module Apps.BounceManager.View exposing (view)
 import Dict
 import Html exposing (..)
 import Html.CssHelpers
+import Game.Account.Database.Models exposing (HackedServer)
+import Game.Account.Bounces.Models as Bounces exposing (Bounce)
 import Game.Data as Game
+import Game.Network.Types as Network
 import UI.Inlines.Networking as Inlines
 import UI.Layouts.FlexColumns exposing (flexCols)
 import UI.Layouts.VerticalSticked exposing (verticalSticked)
 import UI.Layouts.VerticalList exposing (verticalList)
 import UI.Widgets.HorizontalTabs exposing (hzTabs)
-import Game.Account.Database.Models exposing (HackedServer)
-import Game.Network.Models exposing (Bounces, BounceID, Bounce, IP)
 import Apps.BounceManager.Messages exposing (Msg(..))
 import Apps.BounceManager.Models exposing (..)
 import Apps.BounceManager.Resources exposing (Classes(..), prefix)
@@ -33,23 +34,24 @@ compareTabs =
     (==)
 
 
-viewTabLabel : Bool -> MainTab -> List (Html Msg)
+viewTabLabel : Bool -> MainTab -> ( List (Attribute Msg), List (Html Msg) )
 viewTabLabel _ tab =
     tab
         |> tabToString
         |> text
         |> List.singleton
+        |> (,) []
 
 
-viewBounceChain : List IP -> Html Msg
-viewBounceChain ips =
+viewBouncePath : List Network.NIP -> Html Msg
+viewBouncePath ips =
     ips
-        |> List.map Inlines.addr
+        |> List.map (Tuple.second >> Inlines.addr)
         |> List.intersperse (text " > ")
         |> span []
 
 
-viewBounce : ( BounceID, Bounce ) -> Html Msg
+viewBounce : ( Bounces.ID, Bounce ) -> Html Msg
 viewBounce ( id, val ) =
     div [ class [ BounceEntry ] ]
         [ text "ID: "
@@ -58,12 +60,12 @@ viewBounce ( id, val ) =
         , text "Name: "
         , text val.name
         , br [] []
-        , text "Chain: "
-        , viewBounceChain <| val.chain
+        , text "Path: "
+        , viewBouncePath val.path
         ]
 
 
-viewTabManage : Bounces -> Html Msg
+viewTabManage : Bounces.Model -> Html Msg
 viewTabManage src =
     src
         |> Dict.toList
@@ -73,7 +75,7 @@ viewTabManage src =
 
 viewSelectServer : HackedServer -> Html Msg
 viewSelectServer srv =
-    text srv.ip
+    text <| Tuple.second srv.nip
 
 
 viewTabCreate : List HackedServer -> Html Msg
@@ -96,7 +98,7 @@ view data ({ app } as model) =
             app
 
         contentStc =
-            data.game.network.bounces
+            data.game.account.bounces
 
         hckdServers =
             data.game.account.database.servers

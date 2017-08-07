@@ -6,6 +6,7 @@ type Classes
     | WindowHeader
     | WindowBody
     | Maximizeme
+    | HeaderSuper
     | HeaderTitle
     | HeaderVoid
     | HeaderButtons
@@ -15,6 +16,12 @@ type Classes
     | HeaderBtnMinimize
     | HeaderContextSw
     | Canvas
+    | Super
+
+
+workspaceNode : String
+workspaceNode =
+    "workspace"
 
 
 prefix : String

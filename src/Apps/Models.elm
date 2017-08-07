@@ -7,8 +7,10 @@ module Apps.Models
         , title
         , icon
         , model
+        , isDecorated
         )
 
+import Apps.Messages exposing (..)
 import Apps.LogViewer.Models as LogViewer
 import Apps.TaskManager.Models as TaskManager
 import Apps.Browser.Models as Browser
@@ -17,7 +19,15 @@ import Apps.DBAdmin.Models as Database
 import Apps.ConnManager.Models as ConnManager
 import Apps.BounceManager.Models as BounceManager
 import Apps.Finance.Models as Finance
+import Apps.Hebamp.Models as Hebamp
+import Apps.CtrlPanel.Models as CtrlPanel
+import Apps.ServersGears.Models as ServersGears
+import Apps.LocationPicker.Models as LocationPicker
+import Apps.LanViewer.Models as LanViewer
 import Apps.Apps exposing (..)
+import Apps.Messages exposing (..)
+import Game.Data as Game
+import Core.Dispatch as Dispatch exposing (Dispatch)
 
 
 type AppModel
@@ -29,11 +39,20 @@ type AppModel
     | ConnManagerModel ConnManager.Model
     | BounceManagerModel BounceManager.Model
     | FinanceModel Finance.Model
+    | MusicModel Hebamp.Model
+    | CtrlPanelModel CtrlPanel.Model
+    | ServersGearsModel ServersGears.Model
+    | LocationPickerModel LocationPicker.Model
+    | LanViewerModel LanViewer.Model
 
 
 type Contexts
     = ContextualApp
     | ContextlessApp
+
+
+type alias WindowID =
+    String
 
 
 contexts : App -> Contexts
@@ -63,6 +82,21 @@ contexts app =
         FinanceApp ->
             ContextlessApp
 
+        MusicApp ->
+            ContextlessApp
+
+        CtrlPanelApp ->
+            ContextlessApp
+
+        ServersGearsApp ->
+            ContextlessApp
+
+        LocationPickerApp ->
+            ContextlessApp
+
+        LanViewerApp ->
+            ContextualApp
+
 
 name : App -> String
 name app =
@@ -90,6 +124,21 @@ name app =
 
         FinanceApp ->
             Finance.name
+
+        MusicApp ->
+            Hebamp.name
+
+        CtrlPanelApp ->
+            CtrlPanel.name
+
+        ServersGearsApp ->
+            ServersGears.name
+
+        LocationPickerApp ->
+            LocationPicker.name
+
+        LanViewerApp ->
+            LanViewer.name
 
 
 icon : App -> String
@@ -119,6 +168,21 @@ icon app =
         FinanceApp ->
             Finance.icon
 
+        MusicApp ->
+            Hebamp.icon
+
+        CtrlPanelApp ->
+            CtrlPanel.icon
+
+        ServersGearsApp ->
+            ServersGears.icon
+
+        LocationPickerApp ->
+            LocationPicker.icon
+
+        LanViewerApp ->
+            LanViewer.icon
+
 
 title : AppModel -> String
 title model =
@@ -147,30 +211,129 @@ title model =
         FinanceModel model ->
             Finance.title model
 
+        MusicModel model ->
+            Hebamp.title model
 
-model : App -> AppModel
-model app =
+        CtrlPanelModel model ->
+            CtrlPanel.title model
+
+        ServersGearsModel model ->
+            ServersGears.title model
+
+        LocationPickerModel model ->
+            LocationPicker.title model
+
+        LanViewerModel model ->
+            LanViewer.title model
+
+
+model : Game.Data -> WindowID -> App -> ( AppModel, Cmd Msg, Dispatch )
+model data id app =
     case app of
         LogViewerApp ->
-            LogViewerModel LogViewer.initialModel
+            let
+                model =
+                    LogViewerModel LogViewer.initialModel
+            in
+                ( model, Cmd.none, Dispatch.none )
 
         TaskManagerApp ->
-            TaskManagerModel TaskManager.initialModel
+            let
+                model =
+                    TaskManagerModel TaskManager.initialModel
+            in
+                ( model, Cmd.none, Dispatch.none )
 
         BrowserApp ->
-            BrowserModel Browser.initialModel
+            let
+                model =
+                    BrowserModel Browser.initialModel
+            in
+                ( model, Cmd.none, Dispatch.none )
 
         ExplorerApp ->
-            ExplorerModel Explorer.initialModel
+            let
+                model =
+                    ExplorerModel Explorer.initialModel
+            in
+                ( model, Cmd.none, Dispatch.none )
 
         DatabaseApp ->
-            DatabaseModel Database.initialModel
+            let
+                model =
+                    DatabaseModel Database.initialModel
+            in
+                ( model, Cmd.none, Dispatch.none )
 
         ConnManagerApp ->
-            ConnManagerModel ConnManager.initialModel
+            let
+                model =
+                    ConnManagerModel ConnManager.initialModel
+            in
+                ( model, Cmd.none, Dispatch.none )
 
         BounceManagerApp ->
-            BounceManagerModel BounceManager.initialModel
+            let
+                model =
+                    BounceManagerModel BounceManager.initialModel
+            in
+                ( model, Cmd.none, Dispatch.none )
 
         FinanceApp ->
-            FinanceModel Finance.initialModel
+            let
+                model =
+                    FinanceModel Finance.initialModel
+            in
+                ( model, Cmd.none, Dispatch.none )
+
+        MusicApp ->
+            let
+                model =
+                    MusicModel <| Hebamp.initialModel id
+            in
+                ( model, Cmd.none, Dispatch.none )
+
+        CtrlPanelApp ->
+            let
+                model =
+                    CtrlPanelModel CtrlPanel.initialModel
+            in
+                ( model, Cmd.none, Dispatch.none )
+
+        ServersGearsApp ->
+            let
+                model =
+                    ServersGearsModel ServersGears.initialModel
+            in
+                ( model, Cmd.none, Dispatch.none )
+
+        LocationPickerApp ->
+            let
+                pureModel =
+                    LocationPicker.initialModel id
+
+                model =
+                    LocationPickerModel pureModel
+
+                cmd =
+                    LocationPicker.startCmd pureModel
+                        |> Cmd.map LocationPickerMsg
+            in
+                ( model, cmd, Dispatch.none )
+
+        LanViewerApp ->
+            let
+                model =
+                    LanViewerModel LanViewer.initialModel
+            in
+                ( model, Cmd.none, Dispatch.none )
+
+
+isDecorated : App -> Bool
+isDecorated app =
+    case app of
+        MusicApp ->
+            False
+
+        _ ->
+            True

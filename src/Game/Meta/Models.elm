@@ -1,7 +1,6 @@
 module Game.Meta.Models
     exposing
         ( Model
-        , Context(..)
         , initialModel
         , getGateway
         , getContext
@@ -9,11 +8,8 @@ module Game.Meta.Models
 
 import Game.Servers.Shared as Servers
 import Time exposing (Time)
-
-
-type Context
-    = Gateway
-    | Endpoint
+import Game.Meta.Messages exposing (..)
+import Game.Meta.Types exposing (..)
 
 
 type alias Model =

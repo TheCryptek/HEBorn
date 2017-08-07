@@ -1,24 +1,37 @@
 module Core.Subscriptions exposing (subscriptions)
 
+import Utils.Ports.OnLoad exposing (windowLoaded)
 import Core.Messages exposing (..)
 import Core.Models exposing (..)
 import Game.Models as Game
-import Game.Data as GameData
+import Game.Data as Game
 import Game.Subscriptions as Game
 import Driver.Websocket.Models as Ws
 import Driver.Websocket.Subscriptions as Ws
+import Landing.Subscriptions as Landing
 import OS.Models as OS
 import OS.Subscriptions as OS
+import Setup.Subscriptions as Setup
 
 
 subscriptions : Model -> Sub Msg
-subscriptions model =
-    case model of
-        Home model ->
-            home model
+subscriptions ({ state } as model) =
+    let
+        stateSub =
+            case state of
+                Home homeModel ->
+                    home homeModel
 
-        Play model ->
-            play model
+                Setup setupModel ->
+                    setup setupModel
+
+                Play playModel ->
+                    play playModel
+    in
+        Sub.batch
+            [ stateSub
+            , windowLoaded LoadingEnd
+            ]
 
 
 
@@ -27,12 +40,28 @@ subscriptions model =
 
 home : HomeModel -> Sub Msg
 home model =
-    case model.websocket of
-        Just model ->
-            websocket model
+    let
+        landSub =
+            model.landing
+                |> Landing.subscriptions
+                |> Sub.map LandingMsg
+    in
+        case model.websocket of
+            Just model ->
+                Sub.batch
+                    [ websocket model
+                    , landSub
+                    ]
 
-        Nothing ->
-            Sub.none
+            Nothing ->
+                landSub
+
+
+setup : SetupModel -> Sub Msg
+setup model =
+    model.setup
+        |> Setup.subscriptions
+        |> Sub.map SetupMsg
 
 
 play : PlayModel -> Sub Msg
@@ -56,7 +85,7 @@ play model =
 
 os : Game.Model -> OS.Model -> Sub Msg
 os game model =
-    case GameData.fromGame game of
+    case Game.fromGateway game of
         Just data ->
             model
                 |> OS.subscriptions data

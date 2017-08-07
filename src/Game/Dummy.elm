@@ -3,25 +3,22 @@ module Game.Dummy exposing (dummy)
 import Core.Config exposing (Config)
 import Game.Models exposing (..)
 import Game.Account.Dummy as Account
+import Game.Account.Models as Account
 import Game.Servers.Dummy as Servers
-import Game.Network.Dummy as Network
 import Game.Meta.Dummy as Meta
 
 
-dummy : String -> Config -> Model
-dummy token config =
+dummy : Account.ID -> Account.Username -> Account.Token -> Config -> Model
+dummy id username token config =
     let
         model =
-            initialModel token config
+            initialModel id username token config
 
         account =
-            Account.dummy token
+            Account.dummy id username token
 
         servers =
             Servers.dummy
-
-        network =
-            Network.dummy
 
         meta =
             Meta.dummy
@@ -29,6 +26,5 @@ dummy token config =
         { model
             | account = account
             , servers = servers
-            , network = network
             , meta = meta
         }

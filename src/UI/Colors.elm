@@ -1,6 +1,6 @@
 module UI.Colors exposing (..)
 
-import Css exposing (Color, hex)
+import Css exposing (Color, hex, rgb)
 
 
 black : Color
@@ -23,6 +23,11 @@ root =
     hex "9B9E5B"
 
 
+separator : Color
+separator =
+    hex "CCC"
+
+
 hyperlink : Color
 hyperlink =
     hex "00E"
@@ -30,9 +35,20 @@ hyperlink =
 
 bgWindow : Color
 bgWindow =
-    hex "EEE"
+    hex "eee8ea"
 
 
 bgSelected : Color
 bgSelected =
     hex "DDD"
+
+
+bgModal : Color
+bgModal =
+    hex "0078D7"
+
+
+terminalPhosphor : Color
+terminalPhosphor =
+    -- OR AMBER "ffff33"
+    hex "33ff66"

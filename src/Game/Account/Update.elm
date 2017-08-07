@@ -1,6 +1,5 @@
 module Game.Account.Update exposing (..)
 
-import Maybe
 import Core.Dispatch as Dispatch exposing (Dispatch)
 import Core.Messages as Core
 import Driver.Websocket.Channels exposing (..)
@@ -8,6 +7,7 @@ import Driver.Websocket.Channels as Ws
 import Driver.Websocket.Reports as Ws
 import Driver.Websocket.Messages as Ws
 import Events.Events as Events
+import Game.Account.Bounces.Update as Bounces
 import Game.Account.Messages exposing (..)
 import Game.Account.Models exposing (..)
 import Game.Account.Requests exposing (..)
@@ -25,6 +25,19 @@ update game msg model =
     case msg of
         Logout ->
             logout game model
+
+        BouncesMsg msg ->
+            let
+                ( bounces, cmd, dispatch ) =
+                    Bounces.update game msg model.bounces
+
+                cmd_ =
+                    Cmd.map BouncesMsg cmd
+
+                model_ =
+                    { model | bounces = bounces }
+            in
+                ( model_, cmd_, dispatch )
 
         Request data ->
             response game (receive data) model
@@ -68,17 +81,17 @@ response game response model =
 
 event :
     Game.Model
-    -> Events.Response
+    -> Events.Event
     -> Model
     -> ( Model, Cmd Msg, Dispatch )
 event game ev model =
     case ev of
-        Events.Report (Ws.Connected _ id) ->
+        Events.Report (Ws.Connected _) ->
             let
                 dispatch =
                     Dispatch.batch
                         [ Dispatch.websocket
-                            (Ws.JoinChannel AccountChannel (Just id))
+                            (Ws.JoinChannel AccountChannel (Just model.id))
                         , Dispatch.websocket
                             (Ws.JoinChannel RequestsChannel Nothing)
                         ]
@@ -98,7 +111,7 @@ event game ev model =
         Events.Report (Ws.Joined Ws.AccountChannel) ->
             let
                 cmd =
-                    ServerIndex.request (Maybe.withDefault "" model.id) game
+                    ServerIndex.request model.id game
             in
                 ( model, Cmd.none, Dispatch.none )
 

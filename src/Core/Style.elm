@@ -18,10 +18,6 @@ css =
             , maxHeight (vh 100)
             , overflow hidden
             , margin (px 0)
-            , backgroundColor (rgb 57 109 166)
-            , backgroundImage <| url "https://blog.newegg.com/blog/wp-content/uploads/windows_xp_bliss-wide.jpg"
-            , backgroundSize cover
-            , fontFamily sansSerif
             , cursor default
             , unselectable
             ]

@@ -1,15 +1,19 @@
 module OS.SessionManager.Dock.Messages exposing (Msg(..))
 
 import Apps.Apps exposing (App)
-import OS.SessionManager.WindowManager.Models exposing (WindowID)
+
+
+type alias WindowID =
+    -- WM.ID creates a ciclic reference
+    String
 
 
 type Msg
-    = OpenApp App
+    = AppButton App
+    | OpenApp App
     | MinimizeApps App
-    | RestoreApps App
     | CloseApps App
-    | MinimizeWindow ( String, WindowID )
-    | FocusWindow ( String, WindowID )
-    | RestoreWindow ( String, WindowID )
-    | CloseWindow ( String, WindowID )
+    | MinimizeWindow WindowID
+    | FocusWindow WindowID
+    | RestoreWindow WindowID
+    | CloseWindow WindowID

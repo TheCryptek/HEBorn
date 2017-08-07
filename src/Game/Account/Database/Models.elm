@@ -1,7 +1,8 @@
 module Game.Account.Database.Models exposing (..)
 
 import Time exposing (Time)
-import Game.Shared exposing (ID, IP)
+import Game.Network.Types exposing (NIP)
+import Game.Shared exposing (ID)
 
 
 type ServerType
@@ -11,7 +12,7 @@ type ServerType
 
 
 type alias HackedServer =
-    { ip : IP
+    { nip : NIP
     , password : String
     , nick : String
     , notes : Maybe String

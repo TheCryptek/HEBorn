@@ -3,28 +3,46 @@ module Game.Servers.Models
         ( Model
         , Servers
         , Server
-        , Type(..)
-        , NetworkMap
+        , ServerMeta(..)
+        , GatewayMetadata
+        , EndpointMetadata
+        , AnalyzedMetadata
         , initialModel
-        , setFilesystem
-        , getFilesystem
-        , setLogs
-        , getLogs
-        , setProcesses
-        , getProcesses
         , get
-        , getIP
-        , safeUpdate
         , insert
+        , remove
+        , safeUpdate
         , mapNetwork
+        , getName
+        , setName
+        , getNIP
+        , setNIP
+        , getNIPs
+        , setNIPs
+        , getFilesystem
+        , setFilesystem
+        , getLogs
+        , setLogs
+        , getProcesses
+        , setProcesses
+        , getTunnels
+        , setTunnels
+        , getEndpoint
+        , setEndpoint
+        , getBounce
+        , setBounce
+        , getTunnel
+        , setTunnel
         )
 
 import Dict exposing (Dict)
+import Game.Account.Bounces.Models as Bounces
+import Game.Servers.Filesystem.Shared exposing (Filesystem)
+import Game.Servers.Logs.Models as Log exposing (Logs)
+import Game.Servers.Processes.Models as Processes exposing (Processes)
 import Game.Servers.Shared exposing (..)
-import Game.Network.Models as Network
-import Game.Servers.Filesystem.Models exposing (Filesystem, initialFilesystem)
-import Game.Servers.Logs.Models as Log exposing (Logs, initialLogs)
-import Game.Servers.Processes.Models as Processes exposing (Processes, initialProcesses)
+import Game.Servers.Tunnels.Models as Tunnels
+import Game.Network.Types exposing (NIP)
 
 
 type alias Model =
@@ -38,21 +56,44 @@ type alias Servers =
 
 
 type alias Server =
-    { type_ : Type
-    , ip : Network.IP
+    { name : String
+    , nip : NIP
+    , nips : List NIP
     , filesystem : Filesystem
     , logs : Logs
     , processes : Processes
+    , tunnels : Tunnels.Model
+    , coordinates : Coordinates
+    , meta : ServerMeta
     }
 
 
-type Type
-    = LocalServer
-    | RemoteServer
+type ServerMeta
+    = GatewayMeta GatewayMetadata
+    | EndpointMeta EndpointMetadata
+    | AnalyzedMeta AnalyzedMetadata
+
+
+type alias GatewayMetadata =
+    { bounce : Maybe Bounces.ID
+    , endpoint : Maybe NIP
+    }
+
+
+type alias EndpointMetadata =
+    {}
+
+
+type alias AnalyzedMetadata =
+    {}
+
+
+type alias Coordinates =
+    Float
 
 
 type alias NetworkMap =
-    Dict Network.IP ID
+    Dict NIP ID
 
 
 initialModel : Model
@@ -60,6 +101,104 @@ initialModel =
     { servers = Dict.empty
     , network = Dict.empty
     }
+
+
+
+-- server crud
+
+
+get : ID -> Model -> Maybe Server
+get id { servers } =
+    Dict.get id servers
+
+
+insert : ID -> Server -> Model -> Model
+insert id server ({ servers, network } as model) =
+    let
+        servers_ =
+            Dict.insert id server servers
+
+        network_ =
+            List.foldl
+                (flip Dict.insert id)
+                network
+                (server.nip :: server.nips)
+    in
+        model
+            |> setServers servers_
+            |> setNetwork network_
+
+
+remove : ID -> Model -> Model
+remove id ({ servers, network } as model) =
+    let
+        nips =
+            servers
+                |> Dict.get id
+                |> Maybe.map (\server -> server.nip :: server.nips)
+                |> Maybe.withDefault []
+
+        servers_ =
+            Dict.remove id servers
+
+        network_ =
+            List.foldl Dict.remove network nips
+
+        model_ =
+            model
+                |> setServers servers_
+                |> setNetwork network_
+    in
+        model_
+
+
+safeUpdate : ID -> Server -> Model -> Model
+safeUpdate id server model =
+    case Dict.get id model.servers of
+        Just _ ->
+            insert id server model
+
+        Nothing ->
+            model
+
+
+mapNetwork : NIP -> Model -> Maybe ID
+mapNetwork nip { network } =
+    Dict.get nip network
+
+
+
+-- server getters/setters
+
+
+getName : Server -> String
+getName =
+    .name
+
+
+setName : String -> Server -> Server
+setName name server =
+    { server | name = name }
+
+
+getNIP : Server -> NIP
+getNIP =
+    .nip
+
+
+setNIP : NIP -> Server -> Server
+setNIP nip server =
+    { server | nip = nip }
+
+
+getNIPs : Server -> List NIP
+getNIPs server =
+    server.nips
+
+
+setNIPs : List NIP -> Server -> Server
+setNIPs nips server =
+    { server | nips = nips }
 
 
 getFilesystem : Server -> Filesystem
@@ -92,47 +231,96 @@ setProcesses processes model =
     { model | processes = processes }
 
 
-
---
-
-
-get : ID -> Model -> Maybe Server
-get id { servers } =
-    Dict.get id servers
+getTunnels : Server -> Tunnels.Model
+getTunnels =
+    .tunnels
 
 
-getIP : Server -> Network.IP
-getIP { ip } =
-    ip
+setTunnels : Tunnels.Model -> Server -> Server
+setTunnels tunnels model =
+    { model | tunnels = tunnels }
 
 
-insert : ID -> Server -> Model -> Model
-insert id server model =
-    let
-        servers_ =
-            Dict.insert id server model.servers
+getEndpoint : Server -> Maybe NIP
+getEndpoint server =
+    case server.meta of
+        GatewayMeta meta ->
+            meta.endpoint
 
-        network_ =
-            Dict.insert server.ip id model.network
-    in
-        model
-            |> setServers servers_
-            |> setNetwork network_
+        _ ->
+            Nothing
 
 
-safeUpdate : ID -> Server -> Model -> Model
-safeUpdate id server model =
-    case Dict.get id model.servers of
-        Just _ ->
-            insert id server model
+setEndpoint : Maybe NIP -> Server -> Server
+setEndpoint ip server =
+    case server.meta of
+        GatewayMeta meta ->
+            let
+                meta_ =
+                    GatewayMeta { meta | endpoint = ip }
+            in
+                { server | meta = meta_ }
 
-        Nothing ->
-            model
+        _ ->
+            server
 
 
-mapNetwork : Network.IP -> Model -> Maybe ID
-mapNetwork ip { network } =
-    Dict.get ip network
+getBounce : Server -> Maybe Bounces.ID
+getBounce server =
+    case server.meta of
+        GatewayMeta meta ->
+            meta.bounce
+
+        _ ->
+            Nothing
+
+
+setBounce : Maybe Bounces.ID -> Server -> Server
+setBounce id server =
+    case server.meta of
+        GatewayMeta meta ->
+            let
+                meta_ =
+                    GatewayMeta { meta | bounce = id }
+            in
+                { server | meta = meta_ }
+
+        _ ->
+            server
+
+
+getTunnel : Server -> Maybe Tunnels.Tunnel
+getTunnel ({ tunnels } as server) =
+    case server.meta of
+        GatewayMeta { bounce, endpoint } ->
+            case endpoint of
+                Just id ->
+                    Just <| Tunnels.get bounce id tunnels
+
+                Nothing ->
+                    Nothing
+
+        _ ->
+            Nothing
+
+
+setTunnel : Tunnels.Tunnel -> Server -> Server
+setTunnel tunnel ({ tunnels } as server) =
+    case server.meta of
+        GatewayMeta ({ bounce, endpoint } as meta) ->
+            case endpoint of
+                Just id ->
+                    let
+                        tunnels_ =
+                            Tunnels.insert bounce id tunnel tunnels
+                    in
+                        setTunnels tunnels_ server
+
+                Nothing ->
+                    server
+
+        _ ->
+            server
 
 
 

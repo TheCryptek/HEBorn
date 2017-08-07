@@ -12,11 +12,11 @@ module Core.Dispatch
         , websocket
         , game
         , account
-        , network
-        , server
+        , servers
         , filesystem
         , processes
         , logs
+        , tunnels
         , meta
         , web
         )
@@ -27,11 +27,11 @@ import Game.Messages as Game
 import Game.Meta.Messages as Meta
 import Game.Web.Messages as Web
 import Game.Account.Messages as Account
-import Game.Network.Messages as Network
 import Game.Servers.Messages as Servers
 import Game.Servers.Filesystem.Messages as Filesystem
 import Game.Servers.Processes.Messages as Processes
 import Game.Servers.Logs.Messages as Logs
+import Game.Servers.Tunnels.Messages as Tunnels
 import Game.Servers.Shared as Servers
 import Utils.Cmd as CmdUtils
 
@@ -167,13 +167,8 @@ account msg =
     game (Game.AccountMsg msg)
 
 
-network : Network.Msg -> Dispatch
-network msg =
-    game (Game.NetworkMsg msg)
-
-
-server : Servers.Msg -> Dispatch
-server msg =
+servers : Servers.Msg -> Dispatch
+servers msg =
     game (Game.ServersMsg msg)
 
 
@@ -184,17 +179,22 @@ meta msg =
 
 filesystem : Servers.ID -> Filesystem.Msg -> Dispatch
 filesystem id msg =
-    server (Servers.FilesystemMsg id msg)
+    servers (Servers.FilesystemMsg id msg)
 
 
 processes : Servers.ID -> Processes.Msg -> Dispatch
 processes id msg =
-    server (Servers.ProcessMsg id msg)
+    servers (Servers.ProcessMsg id msg)
 
 
 logs : Servers.ID -> Logs.Msg -> Dispatch
 logs id msg =
-    server (Servers.LogMsg id msg)
+    servers (Servers.LogMsg id msg)
+
+
+tunnels : Servers.ID -> Tunnels.Msg -> Dispatch
+tunnels id msg =
+    servers (Servers.TunnelsMsg id msg)
 
 
 web : Web.Msg -> Dispatch

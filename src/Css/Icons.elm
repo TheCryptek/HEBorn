@@ -29,6 +29,11 @@ windowMaximize =
     faIcon FA.expand
 
 
+windowUnmaximize : Icon
+windowUnmaximize =
+    faIcon FA.compress
+
+
 windowClose : Icon
 windowClose =
     faIcon FA.timesCircle
@@ -212,3 +217,68 @@ download =
 finance : Icon
 finance =
     faIcon FA.money
+
+
+hebamp : Icon
+hebamp =
+    faIcon FA.bolt
+
+
+cpanel : Icon
+cpanel =
+    faIcon FA.sliders
+
+
+srvgr : Icon
+srvgr =
+    faIcon FA.wrench
+
+
+locpk : Icon
+locpk =
+    faIcon FA.streetView
+
+
+lanvw : Icon
+lanvw =
+    faIcon FA.podcast
+
+
+osLogo : Icon
+osLogo =
+    faIcon FA.superpowers
+
+
+gateway : Icon
+gateway =
+    faIcon FA.home
+
+
+bounce : Icon
+bounce =
+    faIcon FA.exchange
+
+
+endpoint : Icon
+endpoint =
+    faIcon FA.flagCheckered
+
+
+contextSelected : Icon
+contextSelected =
+    faIcon FA.crosshairs
+
+
+contextSelect : Icon
+contextSelect =
+    faIcon FA.circleThin
+
+
+notifications : Icon
+notifications =
+    faIcon FA.bellO
+
+
+chat : Icon
+chat =
+    faIcon FA.commentO

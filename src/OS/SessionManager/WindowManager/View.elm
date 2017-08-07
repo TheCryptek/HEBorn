@@ -1,37 +1,50 @@
-module OS.SessionManager.WindowManager.View exposing (view, windowTitle)
+module OS.SessionManager.WindowManager.View exposing (view)
 
-import OS.SessionManager.WindowManager.Models exposing (..)
-import OS.SessionManager.WindowManager.Messages exposing (..)
+import Dict
 import Html exposing (..)
-import Game.Data as Game
-import Html.Attributes exposing (class, id, style)
-import Html.Events exposing (onClick, onMouseDown)
+import Html.Attributes exposing (style, attribute)
+import Html.Events exposing (onMouseDown)
 import Html.CssHelpers
-import Html.Attributes exposing (attribute)
+import Html.Keyed
 import Css exposing (left, top, asPairs, px, height, width, int, zIndex)
 import Draggable
-import OS.SessionManager.WindowManager.Context as Context
-import OS.SessionManager.WindowManager.Resources as Res
+import Utils.Html.Attributes exposing (dataDecorated, iconAttr)
+import Utils.Html.Events exposing (onClickMe)
 import Apps.Models as Apps
 import Apps.View as Apps
+import Game.Data as Game
+import Game.Meta.Types exposing (..)
+import OS.SessionManager.WindowManager.Context as Context
+import OS.SessionManager.WindowManager.Context exposing (..)
+import OS.SessionManager.WindowManager.Messages exposing (..)
+import OS.SessionManager.WindowManager.Models exposing (..)
+import OS.SessionManager.WindowManager.Resources as Res
 
 
 { id, class, classList } =
     Html.CssHelpers.withNamespace Res.prefix
 
 
-view : WindowID -> Game.Data -> Model -> Html Msg
-view id data model =
-    case getWindow id model of
-        Just window ->
-            window
-                |> getAppModel
-                |> Apps.view data
-                |> Html.map (WindowMsg id)
-                |> windowWrapper id window
+view : Game.Data -> Model -> Html Msg
+view data ({ windows, visible } as model) =
+    let
+        mapper id =
+            case Dict.get id windows of
+                Just window ->
+                    window
+                        |> getAppModelFromWindow
+                        |> Apps.view (windowData data id window model)
+                        |> Html.map (WindowMsg id)
+                        |> windowWrapper id window
+                        |> (,) id
+                        |> Just
 
-        Nothing ->
-            div [] []
+                Nothing ->
+                    Nothing
+    in
+        Html.Keyed.node Res.workspaceNode
+            [ class [ Res.Super ] ]
+            (List.filterMap mapper visible)
 
 
 styles : List Css.Style -> Attribute Msg
@@ -50,11 +63,12 @@ windowClasses window =
         class [ Res.Window ]
 
 
-windowWrapper : WindowID -> Window -> Html Msg -> Html Msg
+windowWrapper : ID -> Window -> Html Msg -> Html Msg
 windowWrapper id window view =
     div
         [ windowClasses window
         , windowStyle window
+        , dataDecorated <| isDecorated window
         , onMouseDown (UpdateFocusTo (Just id))
         ]
         [ header id window
@@ -64,34 +78,40 @@ windowWrapper id window view =
         ]
 
 
-windowTitle : Window -> String
-windowTitle window =
+isDecorated : Window -> Bool
+isDecorated window =
     window
-        |> getAppModel
-        |> Apps.title
+        |> .app
+        |> Apps.isDecorated
 
 
-header : WindowID -> Window -> Html Msg
+header : ID -> Window -> Html Msg
 header id window =
     div
-        [ Draggable.mouseTrigger id DragMsg ]
+        [ Draggable.mouseTrigger id DragMsg
+        , class [ Res.HeaderSuper ]
+        ]
         [ div
             [ class [ Res.WindowHeader ]
             , onMouseDown (UpdateFocusTo (Just id))
             ]
-            [ headerTitle (windowTitle window) (Apps.icon window.app)
-            , headerContext id window.context
-            , headerButtons id
-            ]
+          <|
+            if (isDecorated window) then
+                [ headerTitle (title window) (Apps.icon window.app)
+                , headerContext id window.context
+                , headerButtons id
+                ]
+            else
+                []
         ]
 
 
-headerContext : WindowID -> Context.Context -> Html Msg
+headerContext : ID -> Maybe Context -> Html Msg
 headerContext id context =
     div []
         [ span
             [ class [ Res.HeaderContextSw ]
-            , onClick (SwitchContext id)
+            , onClickMe (SwitchContext id)
             ]
             [ text (Context.toString context)
             ]
@@ -102,27 +122,27 @@ headerTitle : String -> String -> Html Msg
 headerTitle title icon =
     div
         [ class [ Res.HeaderTitle ]
-        , attribute "data-icon" icon
+        , iconAttr icon
         ]
         [ text title ]
 
 
-headerButtons : WindowID -> Html Msg
+headerButtons : ID -> Html Msg
 headerButtons id =
     div [ class [ Res.HeaderButtons ] ]
         [ span
             [ class [ Res.HeaderButton, Res.HeaderBtnMinimize ]
-            , onClick (Minimize id)
+            , onClickMe (Minimize id)
             ]
             []
         , span
             [ class [ Res.HeaderButton, Res.HeaderBtnMaximize ]
-            , onClick (ToggleMaximize id)
+            , onClickMe (ToggleMaximize id)
             ]
             []
         , span
             [ class [ Res.HeaderButton, Res.HeaderBtnClose ]
-            , onClick (Close id)
+            , onClickMe (Close id)
             ]
             []
         ]
@@ -130,10 +150,21 @@ headerButtons id =
 
 windowStyle : Window -> Html.Attribute Msg
 windowStyle window =
-    styles
-        [ left (px window.position.x)
-        , top (px window.position.y)
-        , width (px window.size.width)
-        , height (px window.size.height)
-        , zIndex (int window.position.z)
-        ]
+    let
+        position =
+            [ left (px window.position.x)
+            , top (px window.position.y)
+            ]
+
+        size =
+            [ width (px window.size.width)
+            , height (px window.size.height)
+            ]
+
+        attrs =
+            if isDecorated window then
+                position ++ size
+            else
+                position
+    in
+        styles attrs

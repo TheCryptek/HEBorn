@@ -1,16 +1,17 @@
 module OS.Header.Messages exposing (Msg(..))
 
-import Game.Meta.Models exposing (Context)
-import OS.Header.Models exposing (OpenMenu(..))
+import UI.Widgets.CustomSelect as CustomSelect
+import Game.Meta.Types exposing (Context)
+import OS.Header.Models exposing (OpenMenu, TabNotifications)
 
 
 type Msg
     = Logout
     | ToggleMenus OpenMenu
-    | MouseEnterItem
-    | MouseLeaveItem
-    | SelectGateway Int
-    | SelectEndpoint Int
-    | SelectBounce Int
+    | CustomSelect CustomSelect.Msg
+    | SelectGateway (Maybe String)
+    | SelectBounce (Maybe String)
+    | SelectEndpoint (Maybe ( String, String ))
     | CheckMenus
     | ContextTo Context
+    | NotificationsTabGo TabNotifications

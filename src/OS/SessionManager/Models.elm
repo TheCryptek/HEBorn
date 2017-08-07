@@ -1,83 +1,143 @@
 module OS.SessionManager.Models
     exposing
         ( Model
-        , SessionManagers
+        , Sessions
+        , ID
         , WindowRef
         , initialModel
         , get
         , insert
+        , openApp
+        , openOrRestoreApp
         , refresh
         , remove
-        , getWindow
-        , setWindow
-        , getWindowID
-        , windows
         )
 
 import Dict exposing (Dict)
-import Maybe exposing (Maybe(..))
 import Random.Pcg as Random
+import Utils.Model.RandomUuid as RandomUuid
+import Apps.Apps as Apps
+import Game.Network.Types exposing (NIP)
+import OS.SessionManager.Messages exposing (..)
 import OS.SessionManager.WindowManager.Models as WindowManager
-    exposing
-        ( WindowID
-        , Window
-        )
+import Core.Dispatch as Dispatch exposing (Dispatch)
+import Game.Data as Game
 
 
--- NOTE: some changes are needed to allow pinned windows, mostly with how
--- the windows list is built; we may or not need a type that looks like this:
+type alias Model =
+    RandomUuid.Model { sessions : Sessions }
 
 
-type alias ServerID =
+type alias Sessions =
+    Dict ID WindowManager.Model
+
+
+type alias ID =
     String
 
 
 type alias WindowRef =
-    ( ServerID, WindowID )
-
-
-type alias SessionManagers =
-    Dict ServerID WindowManager.Model
-
-
-type alias Model =
-    { sessions : SessionManagers
-    , seed : Random.Seed
-    }
+    ( ID, WindowManager.ID )
 
 
 initialModel : Model
 initialModel =
     -- TODO: fetch this from game and stop keeping the active one
-    { sessions = Dict.empty
-    , seed = initialSeed
+    { randomUuidSeed = Random.initialSeed 844121764423
+    , sessions = Dict.empty
     }
 
 
-get : ServerID -> Model -> Maybe WindowManager.Model
+get : ID -> Model -> Maybe WindowManager.Model
 get session { sessions } =
     Dict.get session sessions
 
 
-insert : ServerID -> Model -> Model
-insert id ({ sessions, seed } as model) =
+insert : ID -> Model -> Model
+insert id ({ sessions } as model) =
     if not (Dict.member id sessions) then
         let
             sessions_ =
                 Dict.insert
                     id
-                    (WindowManager.initialModel seed)
+                    WindowManager.initialModel
                     sessions
-
-            seed_ =
-                newSeed (Dict.size sessions_)
         in
-            { model | sessions = sessions_, seed = seed_ }
+            { model | sessions = sessions_ }
     else
         model
 
 
-refresh : ServerID -> WindowManager.Model -> Model -> Model
+openApp :
+    Game.Data
+    -> ID
+    -> Maybe NIP
+    -> Apps.App
+    -> Model
+    -> ( Model, Cmd Msg, Dispatch )
+openApp data id nip app ({ sessions } as model0) =
+    case Dict.get id sessions of
+        Just wm ->
+            let
+                ( model, uuid ) =
+                    getUID model0
+
+                ( wm_, cmd, msg ) =
+                    WindowManager.insert data uuid nip app wm
+
+                cmd_ =
+                    Cmd.map WindowManagerMsg cmd
+
+                sessions_ =
+                    Dict.insert id wm_ sessions
+
+                model_ =
+                    { model | sessions = sessions_ }
+            in
+                ( model_, cmd_, msg )
+
+        Nothing ->
+            ( model0, Cmd.none, Dispatch.none )
+
+
+openOrRestoreApp :
+    Game.Data
+    -> ID
+    -> Maybe NIP
+    -> Apps.App
+    -> Model
+    -> ( Model, Cmd Msg, Dispatch )
+openOrRestoreApp data id nip app ({ sessions } as model0) =
+    case Dict.get id sessions of
+        Just wm ->
+            let
+                ( model, uuid ) =
+                    getUID model0
+
+                ( wm_, cmd, msg ) =
+                    WindowManager.resert data uuid nip app wm
+
+                cmd_ =
+                    Cmd.map WindowManagerMsg cmd
+
+                sessions_ =
+                    Dict.insert id wm_ sessions
+
+                model_ =
+                    { model | sessions = sessions_ }
+            in
+                ( model_, cmd_, msg )
+
+        Nothing ->
+            ( model0, Cmd.none, Dispatch.none )
+
+
+getUID : Model -> ( Model, String )
+getUID =
+    RandomUuid.newUuid
+
+
+refresh : ID -> WindowManager.Model -> Model -> Model
 refresh id wm ({ sessions } as model) =
     case Dict.get id sessions of
         Just _ ->
@@ -91,7 +151,7 @@ refresh id wm ({ sessions } as model) =
             model
 
 
-remove : ServerID -> Model -> Model
+remove : ID -> Model -> Model
 remove id ({ sessions } as model) =
     let
         sessions_ =
@@ -100,70 +160,6 @@ remove id ({ sessions } as model) =
         { model | sessions = sessions_ }
 
 
-getWindowID : WindowRef -> WindowID
+getWindowID : WindowRef -> WindowManager.ID
 getWindowID ( _, id ) =
     id
-
-
-getWindow : WindowRef -> Model -> Maybe Window
-getWindow ( session, id ) { sessions } =
-    case Dict.get session sessions of
-        Just wm ->
-            WindowManager.getWindow id wm
-
-        Nothing ->
-            Nothing
-
-
-setWindow : WindowRef -> Window -> Model -> Model
-setWindow ( session, id ) window ({ sessions } as model) =
-    case Dict.get session sessions of
-        Just wm ->
-            let
-                wm_ =
-                    WindowManager.setWindow id window wm
-
-                sessions_ =
-                    Dict.insert session wm_ sessions
-            in
-                { model | sessions = sessions_ }
-
-        Nothing ->
-            model
-
-
-
--- TODO: evaluate if this is needed
-
-
-windows : String -> Model -> List ( ServerID, WindowID )
-windows id model =
-    -- TODO: update this function to support pinning windows
-    case get id model of
-        Just wm ->
-            wm.windows
-                |> Dict.keys
-                |> List.map (\windowID -> ( id, windowID ))
-
-        _ ->
-            []
-
-
-
--- internals
-
-
-seed : Int
-seed =
-    -- a magic number from some other game
-    844121764423
-
-
-newSeed : Int -> Random.Seed
-newSeed a =
-    Random.initialSeed (seed + a)
-
-
-initialSeed : Random.Seed
-initialSeed =
-    newSeed 0

@@ -3,23 +3,24 @@ module OS.SessionManager.View exposing (..)
 import Html exposing (..)
 import Html.CssHelpers
 import Game.Data as GameData
+import Dict
 import OS.Resources as OsRes
 import OS.SessionManager.Models exposing (..)
 import OS.SessionManager.Messages exposing (..)
-import OS.SessionManager.WindowManager.View as WindowManager
-import OS.SessionManager.WindowManager.Models as WindowManager
+import OS.SessionManager.Helpers exposing (..)
+import OS.SessionManager.WindowManager.View as WM
 import OS.SessionManager.WindowManager.Resources as WmRes
 import OS.SessionManager.Dock.View as Dock
 
 
 osClass : List class -> Attribute msg
 osClass =
-    .class <| Html.CssHelpers.withNamespace "os"
+    .class <| Html.CssHelpers.withNamespace OsRes.prefix
 
 
 wmClass : List class -> Attribute msg
 wmClass =
-    .class <| Html.CssHelpers.withNamespace "wm"
+    .class <| Html.CssHelpers.withNamespace WmRes.prefix
 
 
 view : GameData.Data -> Model -> Html Msg
@@ -44,34 +45,15 @@ viewDock game model =
 
 viewWM : GameData.Data -> Model -> Html Msg
 viewWM data model =
-    model
-        |> windows data.id
-        |> List.filterMap (maybeViewWindow data model)
-        |> div [ wmClass [ WmRes.Canvas ] ]
+    let
+        id =
+            toSessionID data
+    in
+        case Dict.get id model.sessions of
+            Just wm ->
+                wm
+                    |> WM.view data
+                    |> Html.map WindowManagerMsg
 
-
-maybeViewWindow :
-    GameData.Data
-    -> Model
-    -> WindowRef
-    -> Maybe (Html Msg)
-maybeViewWindow data model ( wmID, id ) =
-    case get wmID model of
-        Just wm ->
-            model
-                |> getWindow ( wmID, id )
-                |> Maybe.andThen
-                    (\window ->
-                        case window.state of
-                            WindowManager.NormalState ->
-                                wm
-                                    |> WindowManager.view id data
-                                    |> Html.map WindowManagerMsg
-                                    |> Just
-
-                            _ ->
-                                Nothing
-                    )
-
-        Nothing ->
-            Nothing
+            Nothing ->
+                div [ wmClass [ WmRes.Canvas ] ] []

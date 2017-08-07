@@ -1,12 +1,24 @@
 module Apps.Explorer.Models exposing (..)
 
 import Game.Servers.Models as Servers exposing (Server)
+import Game.Servers.Filesystem.Shared as Filesystem
 import Game.Servers.Filesystem.Models as Filesystem
 import Apps.Explorer.Menu.Models as Menu
+import Apps.Explorer.Lib exposing (locationToString)
+
+
+type EditingStatus
+    = NotEditing
+    | CreatingFile String
+    | CreatingPath String
+    | Moving Filesystem.FileID
+    | Renaming Filesystem.FileID String
 
 
 type alias Explorer =
-    { path : Filesystem.FilePath }
+    { path : Filesystem.Location
+    , editing : EditingStatus
+    }
 
 
 type alias Model =
@@ -24,7 +36,7 @@ title : Model -> String
 title ({ app } as model) =
     let
         path =
-            app.path
+            locationToString app.path
 
         posfix =
             if (String.length path) > 12 then
@@ -52,7 +64,8 @@ icon =
 
 initialExplorer : Explorer
 initialExplorer =
-    { path = Filesystem.rootPath
+    { path = []
+    , editing = NotEditing
     }
 
 
@@ -63,28 +76,42 @@ initialModel =
     }
 
 
-getPath : Explorer -> Filesystem.FilePath
+getPath : Explorer -> Filesystem.Location
 getPath explorer =
     explorer.path
 
 
-setPath : Explorer -> Filesystem.FilePath -> Explorer
-setPath explorer path =
-    { explorer | path = path }
+setPath : Explorer -> Filesystem.Location -> Explorer
+setPath explorer loc =
+    { explorer
+        | path = loc
+        , editing =
+            case explorer.editing of
+                Moving _ ->
+                    explorer.editing
+
+                _ ->
+                    NotEditing
+    }
 
 
 changePath :
-    Filesystem.FilePath
+    Filesystem.Location
     -> Filesystem.Filesystem
     -> Explorer
     -> Explorer
 changePath path filesystem explorer =
-    if Filesystem.pathExists path filesystem then
+    if Filesystem.isLocationValid path filesystem then
         setPath explorer path
     else
         explorer
 
 
-resolvePath : Server -> Filesystem.FilePath -> List Filesystem.File
+resolvePath : Server -> Filesystem.Location -> List Filesystem.Entry
 resolvePath server path =
-    Filesystem.getFilesOnPath path (Servers.getFilesystem server)
+    Filesystem.findChildren path (Servers.getFilesystem server)
+
+
+setEditing : EditingStatus -> Explorer -> Explorer
+setEditing val src =
+    { src | editing = val }

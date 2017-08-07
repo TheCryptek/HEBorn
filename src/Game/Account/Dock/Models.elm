@@ -17,4 +17,9 @@ initialModel =
     , Apps.ConnManagerApp
     , Apps.BounceManagerApp
     , Apps.FinanceApp
+    , Apps.MusicApp
+    , Apps.CtrlPanelApp
+    , Apps.ServersGearsApp
+    , Apps.LocationPickerApp
+    , Apps.LanViewerApp
     ]

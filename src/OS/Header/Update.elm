@@ -1,14 +1,17 @@
 module OS.Header.Update exposing (update)
 
-import OS.Header.Models exposing (..)
-import OS.Header.Messages exposing (..)
 import Core.Dispatch as Dispatch exposing (Dispatch)
+import UI.Widgets.CustomSelect as CustomSelect
 import Game.Account.Messages as Account
-import Game.Data as GameData
+import Game.Data as Game
+import Game.Meta.Messages as Meta
+import Game.Servers.Messages as Servers
+import OS.Header.Messages exposing (..)
+import OS.Header.Models exposing (..)
 
 
-update : GameData.Data -> Msg -> Model -> ( Model, Cmd Msg, Dispatch )
-update game msg model =
+update : Game.Data -> Msg -> Model -> ( Model, Cmd Msg, Dispatch )
+update data msg ({ openMenu } as model) =
     case msg of
         Logout ->
             let
@@ -20,7 +23,7 @@ update game msg model =
         ToggleMenus next ->
             let
                 openMenu_ =
-                    if (model.openMenu /= NothingOpen && model.openMenu == next) then
+                    if (openMenu /= NothingOpen && openMenu == next) then
                         NothingOpen
                     else
                         next
@@ -30,19 +33,54 @@ update game msg model =
             in
                 ( model_, Cmd.none, Dispatch.none )
 
-        MouseEnterItem ->
+        CustomSelect CustomSelect.MouseEnter ->
             let
                 model_ =
                     { model | mouseSomewhereInside = True }
             in
                 ( model_, Cmd.none, Dispatch.none )
 
-        MouseLeaveItem ->
+        CustomSelect CustomSelect.MouseLeave ->
             let
                 model_ =
                     { model | mouseSomewhereInside = False }
             in
                 ( model_, Cmd.none, Dispatch.none )
+
+        SelectGateway id ->
+            let
+                dispatch =
+                    case id of
+                        Just id ->
+                            Dispatch.meta <| Meta.SetGateway id
+
+                        Nothing ->
+                            Dispatch.none
+
+                model_ =
+                    { model | openMenu = NothingOpen }
+            in
+                ( model_, Cmd.none, dispatch )
+
+        SelectBounce id ->
+            let
+                dispatch =
+                    Dispatch.servers <| Servers.SetBounce data.id id
+
+                model_ =
+                    { model | openMenu = NothingOpen }
+            in
+                ( model_, Cmd.none, dispatch )
+
+        SelectEndpoint ip ->
+            let
+                dispatch =
+                    Dispatch.meta <| Meta.SetEndpoint ip
+
+                model_ =
+                    { model | openMenu = NothingOpen }
+            in
+                ( model_, Cmd.none, dispatch )
 
         CheckMenus ->
             let
@@ -54,5 +92,16 @@ update game msg model =
             in
                 ( model_, Cmd.none, Dispatch.none )
 
-        _ ->
-            ( model, Cmd.none, Dispatch.none )
+        ContextTo context ->
+            let
+                dispatch =
+                    Dispatch.meta <| Meta.ContextTo context
+            in
+                ( model, Cmd.none, dispatch )
+
+        NotificationsTabGo target ->
+            let
+                model_ =
+                    { model | activeNotificationsTab = target }
+            in
+                ( model_, Cmd.none, Dispatch.none )

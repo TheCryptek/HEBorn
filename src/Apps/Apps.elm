@@ -10,3 +10,8 @@ type App
     | ConnManagerApp
     | BounceManagerApp
     | FinanceApp
+    | MusicApp
+    | CtrlPanelApp
+    | ServersGearsApp
+    | LocationPickerApp
+    | LanViewerApp

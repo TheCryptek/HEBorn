@@ -9,16 +9,13 @@ import Core.Models as Core
 import Core.Dispatch as Dispatch exposing (Dispatch)
 
 
-update : Core.HomeModel -> Msg -> Model -> ( Model, Cmd Msg, Dispatch )
+update : Core.Model -> Msg -> Model -> ( Model, Cmd Msg, Dispatch )
 update core msg model =
     case msg of
         SubmitLogin ->
             let
                 cmd =
-                    Login.request
-                        model.username
-                        model.password
-                        core
+                    Login.request model.username model.password core
             in
                 ( model, cmd, Dispatch.none )
 
@@ -39,7 +36,7 @@ update core msg model =
 
 
 response :
-    Core.HomeModel
+    Core.Model
     -> Response
     -> Model
     -> ( Model, Cmd Msg, Dispatch )
@@ -51,7 +48,7 @@ response core response model =
                     { model | loginFailed = False }
 
                 dispatch =
-                    Dispatch.core (Core.Boot token id)
+                    Dispatch.core (Core.Boot id model.username token True)
             in
                 ( model_, Cmd.none, dispatch )
 

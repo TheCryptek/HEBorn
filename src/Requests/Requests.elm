@@ -1,15 +1,15 @@
-module Requests.Requests exposing (request, report)
+module Requests.Requests exposing (request, report, fake)
 
-import Result as Result exposing (Result(..))
 import Http
+import Json.Decode as Decode
+import Json.Decode.Pipeline exposing (decode, required, optional)
+import Json.Encode as Encode
 import Driver.Http.Http as HttpDriver
 import Driver.Websocket.Channels as WebsocketDriver
 import Driver.Websocket.Websocket as WebsocketDriver
-import Requests.Types exposing (..)
+import Utils.Cmd as Cmd
 import Requests.Topics exposing (..)
-import Json.Encode as Encode
-import Json.Decode as Decode
-import Json.Decode.Pipeline exposing (decode, required, optional)
+import Requests.Types exposing (..)
 
 
 report : Result String a -> a
@@ -44,6 +44,18 @@ request topic msg context data source =
                 msg
                 context
                 data
+
+
+fake :
+    Topic
+    -> (ResponseType -> msg)
+    -> Context
+    -> Encode.Value
+    -> ResponseType
+    -> ConfigSource a
+    -> Cmd msg
+fake _ msg _ _ response _ =
+    Cmd.fromMsg (msg response)
 
 
 

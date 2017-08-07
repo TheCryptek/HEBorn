@@ -3,8 +3,14 @@ module Landing.Login.View exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick, onInput, onBlur)
+import Html.CssHelpers
+import Landing.Resources as Res
 import Landing.Login.Messages exposing (Msg(..))
 import Landing.Login.Models exposing (Model)
+
+
+landClass =
+    (.class) <| Html.CssHelpers.withNamespace Res.prefix
 
 
 view : Model -> Html Msg
@@ -13,28 +19,34 @@ view model =
         [ id "login-form"
         , action "javascript:void(0);"
         ]
-        [ h1 [] [ text "Login" ]
-        , label [ for "username-field" ] [ text "username: " ]
-        , input
-            [ id "username-field"
-            , type_ "text"
-            , value model.username
-            , onInput (\str -> SetUsername str)
-            , onBlur ValidateUsername
+        [ div [ landClass [ Res.Title ] ] [ text "Login" ]
+        , br [] []
+        , div [ landClass [ Res.Input ] ]
+            [ label [ for "username-field" ] [ text "username: " ]
+            , input
+                [ id "username-field"
+                , type_ "text"
+                , value model.username
+                , onInput (\str -> SetUsername str)
+                , onBlur ValidateUsername
+                ]
+                []
             ]
-            []
         , div [ class "validation-error" ] [ text (viewErrorsUsername model) ]
-        , label [ for "password-field" ] [ text "password: " ]
-        , input
-            [ id "password-field"
-            , type_ "password"
-            , value model.password
-            , onInput (\str -> SetPassword str)
-            , onBlur ValidatePassword
+        , div [ landClass [ Res.Input ] ]
+            [ label [ for "password-field" ] [ text "password: " ]
+            , input
+                [ id "password-field"
+                , type_ "password"
+                , value model.password
+                , onInput (\str -> SetPassword str)
+                , onBlur ValidatePassword
+                ]
+                []
             ]
-            []
         , div [ class "validation-error" ] [ text (viewErrorsPassword model) ]
         , div [ class "login-error" ] [ text (viewErrorsLogin model) ]
+        , br [] []
         , button [ class ("signup-button " ++ buttonClass model), onClick SubmitLogin ] [ text "Login" ]
         ]
 

@@ -1,8 +1,12 @@
 module OS.SessionManager.WindowManager.Messages exposing (Msg(..))
 
 import Draggable
-import OS.SessionManager.WindowManager.Models exposing (WindowID)
 import Apps.Messages as Apps
+
+
+type alias WindowID =
+    -- WM.ID creates a ciclic reference
+    String
 
 
 type Msg
